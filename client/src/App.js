@@ -9,7 +9,26 @@ function App() {
   const [error, setError] = useState(null);
   const [familyName, setFamilyName] = useState('');
   const [selectingId, setSelectingId] = useState(null);
+  const [unreservingId, setUnreservingId] = useState(null);
   const [families, setFamilies] = useState([]);
+  const handleUnreserve = async (projectId) => {
+    if (!familyName) return alert('Seleccione una familia');
+    setUnreservingId(projectId);
+    try {
+      const res = await fetch('/api/unreserve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, familyName })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      setProjects(projects => projects.map(p => p.id === projectId ? { ...p, selectedBy: null } : p));
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setUnreservingId(null);
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -105,7 +124,20 @@ function App() {
                     <strong>{p.title}</strong>
                     <div className="desc">{p.description}</div>
                     {p.selectedBy ? (
-                      <span className="reserved">Reservado por: {p.selectedBy}</span>
+                      p.selectedBy === familyName ? (
+                        <>
+                          <span className="reserved">Reservado por: {p.selectedBy}</span>
+                          <button
+                            onClick={() => handleUnreserve(p.id)}
+                            disabled={unreservingId === p.id}
+                            style={{ marginLeft: 8 }}
+                          >
+                            {unreservingId === p.id ? 'Liberando...' : 'Liberar'}
+                          </button>
+                        </>
+                      ) : (
+                        <span className="reserved">Reservado por: {p.selectedBy}</span>
+                      )
                     ) : (
                       <button
                         onClick={() => handleSelect(p.id)}
