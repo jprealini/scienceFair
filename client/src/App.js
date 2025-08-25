@@ -55,7 +55,7 @@ function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
       setProjects(projects => projects.map(p => p.id === projectId ? { ...p, selectedBy: familyName } : p));
-      setFamilyName('');
+      // Do not clear familyName after reserving, so "Liberar" button can show for the selected family
     } catch (e) {
       alert(e.message);
     } finally {
