@@ -1,40 +1,40 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
-const PROJECTS_FILE = path.join(__dirname, 'projects.json');
-let projects = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf-8'));
 
-// GET all projects
-app.get('/api/projects', (req, res) => {
-  res.json(projects);
+// Supabase config
+const supabaseUrl = "https://btvzhdvlviipnyevxrwa.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dnpoZHZsdmlpcG55ZXZ4cndhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMjc1MDgsImV4cCI6MjA3MTcwMzUwOH0.JjamX6XBLizR4Pc7uP3JGfxnoaYFZqvWV8a2bwx7DLw";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+
+// GET all projects from Supabase
+app.get('/api/projects', async (req, res) => {
+  const { data, error } = await supabase.from('projects').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
-// POST select a project for a family
-app.post('/api/select', (req, res) => {
+
+// POST select a project for a family (update selectedBy if not already selected)
+app.post('/api/select', async (req, res) => {
   const { projectId, familyName } = req.body;
-  const project = projects.find(p => p.id === projectId);
-  if (!project) {
-    return res.status(404).json({ error: 'Project not found' });
-  }
-  if (project.selectedBy) {
-    return res.status(400).json({ error: 'Project already selected' });
-  }
-  project.selectedBy = familyName;
-  // Persist the updated projects array to the JSON file
-  fs.writeFile(PROJECTS_FILE, JSON.stringify(projects, null, 2), err => {
-    if (err) {
-      project.selectedBy = null; // rollback in-memory change
-      return res.status(500).json({ error: 'Failed to save selection' });
-    }
-    res.json({ success: true, project });
-  });
+  // Only update if not already selected
+  const { data, error } = await supabase
+    .from('projects')
+    .update({ selectedBy: familyName })
+    .eq('id', projectId)
+    .is('selectedBy', null)
+    .select();
+  if (error) return res.status(500).json({ error: error.message });
+  if (!data || data.length === 0) return res.status(400).json({ error: 'Project already selected or not found' });
+  res.json({ success: true, project: data[0] });
 });
 
 
