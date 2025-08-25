@@ -22,10 +22,25 @@ app.get('/api/projects', async (req, res) => {
   res.json(data);
 });
 
+// GET all families from Supabase
+app.get('/api/families', async (req, res) => {
+  const { data, error } = await supabase.from('family').select('lastName');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data.map(f => f.lastName));
+});
 
 // POST select a project for a family (update selectedBy if not already selected)
 app.post('/api/select', async (req, res) => {
   const { projectId, familyName } = req.body;
+  // Check if this family has already reserved a project
+  const { data: existing, error: checkError } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('selectedBy', familyName);
+  if (checkError) return res.status(500).json({ error: checkError.message });
+  if (existing && existing.length > 0) {
+    return res.status(400).json({ error: 'This family has already reserved a project.' });
+  }
   // Only update if not already selected
   const { data, error } = await supabase
     .from('projects')
@@ -35,6 +50,21 @@ app.post('/api/select', async (req, res) => {
     .select();
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0) return res.status(400).json({ error: 'Project already selected or not found' });
+  res.json({ success: true, project: data[0] });
+});
+
+// POST unreserve a project (set selectedBy to null)
+app.post('/api/unreserve', async (req, res) => {
+  const { projectId, familyName } = req.body;
+  // Only allow unreserve if the project is currently reserved by this family
+  const { data, error } = await supabase
+    .from('projects')
+    .update({ selectedBy: null })
+    .eq('id', projectId)
+    .eq('selectedBy', familyName)
+    .select();
+  if (error) return res.status(500).json({ error: error.message });
+  if (!data || data.length === 0) return res.status(400).json({ error: 'Project not reserved by this family or not found' });
   res.json({ success: true, project: data[0] });
 });
 

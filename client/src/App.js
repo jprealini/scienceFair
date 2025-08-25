@@ -2,17 +2,24 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 
+
 function App() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [familyName, setFamilyName] = useState('');
   const [selectingId, setSelectingId] = useState(null);
+  const [families, setFamilies] = useState([]);
 
   useEffect(() => {
-    fetch('/api/projects')
-      .then(res => res.json())
-      .then(setProjects)
+    Promise.all([
+      fetch('/api/projects').then(res => res.json()),
+      fetch('/api/families').then(res => res.json())
+    ])
+      .then(([projectsData, familiesData]) => {
+        setProjects(projectsData);
+        setFamilies(familiesData);
+      })
       .catch(setError)
       .finally(() => setLoading(false));
   }, []);
@@ -67,13 +74,16 @@ function App() {
     <div className="App">
       <h1>Feria de Ciencias Cristiana</h1>
       <div>
-        <input
+        <select
           className="family-input"
-          type="text"
-          placeholder="Nombre de la familia"
           value={familyName}
           onChange={e => setFamilyName(e.target.value)}
-        />
+        >
+          <option value="">Seleccione una familia</option>
+          {families.map(name => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+        </select>
       </div>
       <div className="sciences-container">
         {Object.entries(grouped).map(([discipline, levels]) => (
