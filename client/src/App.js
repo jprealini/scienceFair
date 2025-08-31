@@ -89,6 +89,12 @@ function App() {
     'Ingeniería Natural': '#dcedc8',
   };
 
+  // Build a map of familyName -> project title (or null)
+  const familySelections = families.map(fam => {
+    const proj = projects.find(p => p.selectedBy === fam);
+    return { family: fam, project: proj ? proj.title : null };
+  });
+
   return (
     <div className="App">
       <h1>Feria de Ciencias Cristiana</h1>
@@ -104,6 +110,19 @@ function App() {
           ))}
         </select>
       </div>
+
+      {/* Family selections summary */}
+      <div className="family-selections" style={{ margin: '20px 0', padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
+        <h3>Selección de cada familia</h3>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {familySelections.map(({ family, project }) => (
+            <li key={family} style={{ marginBottom: 4 }}>
+              <strong>{family}:</strong> {project ? project : <span style={{ color: '#888' }}>Sin selección</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
+
       <div className="sciences-container">
         {Object.entries(grouped).map(([discipline, levels]) => (
           <div
