@@ -92,7 +92,11 @@ function App() {
   // Build a map of familyName -> project title (or null)
   const familySelections = families.map(fam => {
     const proj = projects.find(p => p.selectedBy === fam);
-    return { family: fam, project: proj ? proj.title : null };
+    return {
+      family: fam,
+      project: proj ? proj.title : null,
+      discipline: proj ? proj.discipline : null
+    };
   });
 
   return (
@@ -112,15 +116,39 @@ function App() {
       </div>
 
       {/* Family selections summary */}
-      <div className="family-selections" style={{ margin: '20px 0', padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
+      <div className="family-selections" style={{ margin: '20px 0' }}>
         <h3>Selección de cada familia</h3>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {familySelections.map(({ family, project }) => (
-            <li key={family} style={{ marginBottom: 4 }}>
-              <strong>{family}:</strong> {project ? project : <span style={{ color: '#888' }}>Sin selección</span>}
-            </li>
-          ))}
-        </ul>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          {familySelections.map(({ family, project, discipline }) => {
+            const color = discipline ? (scienceColors[discipline] || '#e0e0e0') : '#f5f5f5';
+            return (
+              <div
+                key={family}
+                style={{
+                  background: color,
+                  border: `2px solid ${color}`,
+                  borderRadius: 10,
+                  padding: '12px 18px',
+                  minWidth: 180,
+                  minHeight: 60,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  boxShadow: '0 2px 8px #0001',
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>{family}</div>
+                <div>
+                  {project ? (
+                    <span>{project}</span>
+                  ) : (
+                    <span style={{ color: '#888' }}>Sin selección</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="sciences-container">
